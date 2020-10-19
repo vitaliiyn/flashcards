@@ -13,9 +13,18 @@ on:
   pull_request:
     branches: [ main ]
 
+services:
+  postgres:
+    image: postgres:11
+      env:
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_USER: postgres
+      options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      ports:
+        - 5432:5432
+
 jobs:
   test:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -27,7 +36,15 @@ jobs:
       uses: ruby/setup-ruby@ec106b438a1ff6ff109590de34ddc62c540232e0
       with:
         ruby-version: 2.7.1
+    - name: Install library for postgres
+      run: sudo apt-get install libpq-dev
     - name: Install dependencies
       run: bundle install
+    - name: Setup Database
+        run: bundle exec rails db:setup
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          RAILS_ENV: test
     - name: Run tests
       run: bundle exec rspec
